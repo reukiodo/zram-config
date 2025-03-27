@@ -40,7 +40,7 @@
 # zram is already running.
 
 # swap	alg		mem_limit	disk_size	swap_priority	page-cluster	swappiness
-swap	zstd		0		1024M		32767		0		150
+swap	zstd		0		1024M		32767		0		100
 
 # log	alg		mem_limit	disk_size	target_dir	oldlog_dir
 log	zstd		0		500M		/var/log	/opt/zram/oldlog
