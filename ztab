@@ -40,10 +40,10 @@
 # zram is already running.
 
 # swap	alg		mem_limit	disk_size	swap_priority	page-cluster	swappiness
-swap	lzo-rle		250M		750M		75		0		150
-
-# dir	alg		mem_limit	disk_size	target_dir
-#dir	lzo-rle		50M		150M		/home/pi
+swap	zstd		0		1024M		32767		0		150
 
 # log	alg		mem_limit	disk_size	target_dir	oldlog_dir
-log	lzo-rle		50M		150M		/var/log	/opt/zram/oldlog
+log  zstd		0		500M		/var/log	/opt/zram/oldlog
+
+# dir	alg		mem_limit	disk_size	target_dir
+#dir	zstd		0		500M		/home/pi
