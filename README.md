@@ -15,8 +15,7 @@ OverlayFS is used so that files do not need to be copied from persistent storage
 In theory this should allow for faster boots and larger directories as no complete directory copy is needed.
 A version of [kmxz/overlayfs-tools](https://github.com/kmxz/overlayfs-tools) is used to implement the OverlayFS sync logic.
 
-This tool is primarily developed and tested against Raspberry Pi OS.
-Any Debian derivative should also work out of the box, however there is no guarantee.
+This tool is primarily developed and tested against Debian. Any Debian derivative should also work out of the box, however there is no guarantee.
 Experimental Alpine support has also been added, other distributions may work but once again, there is no guarantee.
 
 ## A Brief Usage Guide
@@ -26,14 +25,21 @@ Experimental Alpine support has also been added, other distributions may work bu
 The following assumes that you have the [`gh`](https://cli.github.com) cli tool installed and setup on your system.
 
 ``` shell
-gh release download --repo ecdye/zram-config --pattern '*.tar.lz'
+gh release download --repo reukiodo/zram-config --pattern '*.tar.lz'
 mkdir -p zram-config && tar -xf zram-config*.tar.lz --strip-components=1 --directory=zram-config
 sudo ./zram-config/install.bash
 ```
 
+Alternatively:
+```shell
+wget https://github.com/reukiodo/zram-config/archive/refs/heads/main.zip
+unzip main.zip
+sudo zram-config-main/install.bash
+```
+
 #### Manually start or stop
 
-On Debian, use `sudo systemctl {start|stop} zram-config.service` to start or stop zram-config.
+On Debian, use `sudo service zram-config {start|stop}` or `sudo systemctl {start|stop} zram-config.service` to start or stop zram-config.
 On Alpine, use `sudo rc-service zram-config {start|stop}`.
 This will ensure that any changes are properly synced to the persistent storage before system poweroff.
 
@@ -74,7 +80,7 @@ All configuration is done in the `/etc/ztab` file.
 
 Use `#` to comment out any line, add new drives with the first column providing the drive type and then drive details separated by tab characters.
 
-All algorithms in `/proc/crypto` are supported but only `lzo-rle`, `lzo`, `lz4`, and `zstd` have zramctl text strings; `lzo-rle` is the fastest with `zstd` having much better text compression.
+All algorithms in `/proc/crypto` are supported but only `lzo-rle`, `lzo`, `lz4`, and `zstd` have zramctl text strings; `lzo-rle` is the fastest with `zstd` having much better text compression. Default lzo is most compatible, but least performant if others are supported by the kernel.
 
 `mem_limit` is the compressed memory limit and will set a hard memory limit for the system admin.
 Set to 0 to disable the `mem_limit`.
@@ -85,10 +91,10 @@ Don't make it much higher than the compression algorithm (and the additional zra
 
 `swap_priority` will set zram over alternative swap devices.
 
-`page-cluster` 0 means tuning to singular pages rather than the default 3 which caches 8 for HDD tuning, which can lower latency.
+`page-cluster` default 0 means tuning to singular pages which can lower latency rather than the default 3 which caches 8 for HDD tuning.
 
-`swappiness` 150 because the improved performance of zram allows more usage without any adverse affects from the default of 60.
-It can be raised up to 200 which will improve performance in high memory pressure situations.
+`swappiness` default 100 because the improved performance of zram allows more usage without any adverse affects from the default of 60.
+It can be raised up to 200 in kernels newer than 5.8 which will improve performance in high memory pressure situations.
 
 `target_dir` is the directory you wish to hold in zram, and the original will be moved to a bind mount and is synchronized on start, stop, and write commands.
 
@@ -105,11 +111,11 @@ Once finished, start zram using `sudo systemctl start zram-config.service` or `s
 # swap	alg		mem_limit	disk_size	swap_priority	page-cluster	swappiness
 swap	lzo-rle		250M		750M		75		0		150
 
-# dir	alg		mem_limit	disk_size	target_dir
-#dir	lzo-rle		50M		150M		/home/pi
-
 # log	alg		mem_limit	disk_size	target_dir	oldlog_dir
 log	lzo-rle		50M		150M		/var/log	/opt/zram/oldlog
+
+# dir	alg		mem_limit	disk_size	target_dir
+#dir	lzo-rle		50M		150M		/home/pi
 ```
 
 ### Is it working?
