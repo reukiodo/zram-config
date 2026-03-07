@@ -1,0 +1,67 @@
+.TH ZTAB 5 "March 2026" "zram-config" "File Formats Manual"
+.SH NAME
+ztab \- configuration file for zram-config
+.SH DESCRIPTION
+The \fB/etc/ztab\fR file contains information about zram devices to be 
+initialized by \fBzram-config\fR. Each line defines a single zram device 
+(swap, log, or directory) with parameters separated by tabs.
+.SH FORMAT
+Lines beginning with '#' are treated as comments and ignored. 
+Each active line must start with a drive type followed by type-specific 
+columns.
+.SH DRIVE TYPES AND COLUMNS
+.SS swap
+Used to initialize a zram-based swap device.
+.PP
+\fBswap  alg  mem_limit  disk_size  priority  page-cluster  swappiness\fR
+.TP
+\fBalg\fR
+Compression algorithm (e.g., lzo-rle, lzo, lz4, zstd). \fIlzo-rle\fR is 
+fastest; \fIzstd\fR provides best compression.
+.TP
+\fBmem_limit\fR
+The compressed memory limit (e.g., 250M). Set to 0 to disable limit.
+.TP
+\fBdisk_size\fR
+The virtual uncompressed size. Recommended to be ~150% of \fBmem_limit\fR.
+.TP
+\fBpriority\fR
+The swap priority (higher numbers are used first).
+.TP
+\fBpage-cluster\fR
+Tuning for page allocation. 0 (default) lowers latency for zram.
+.TP
+\fBswappiness\fR
+Kernel swappiness parameter (default 100). Up to 200 on kernels 5.8+.
+
+.SS log
+Used for log-rotation to an off-device directory using \fBoverlayfs-tools\fR.
+.PP
+\fBlog  alg  mem_limit  disk_size  target_dir  oldlog_dir\fR
+.TP
+\fBtarget_dir\fR
+The live log directory to be held in zram (e.g., /var/log).
+.TP
+\fBoldlog_dir\fR
+The directory on physical storage where logs are rotated/synced.
+
+.SS dir
+Used to hold a general directory in zram via OverlayFS.
+.PP
+\fBdir  alg  mem_limit  disk_size  target_dir\fR
+
+.SH EXAMPLES
+.IP "swap	lzo-rle	250M	750M	75	0	150"
+.IP "log	lzo-rle	50M	150M	/var/log	/opt/zram/oldlog"
+.IP "dir	lzo-rle	50M	150M	/home/pi"
+
+.SH NOTES
+To edit an active zram device, the \fBzram-config.service\fR must be 
+stopped before changes to \fBztab\fR are applied.
+
+.SH FILES
+.I /etc/ztab
+.SH SEE ALSO
+.BR zram-config (8),
+.BR overlay (8),
+.BR zramctl (8)

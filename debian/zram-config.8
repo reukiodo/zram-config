@@ -1,0 +1,16 @@
+.TH ZRAM-CONFIG 8 "March 2026" "zram-config" "System Administration Commands"
+.SH NAME
+zram-config \- localized zram configuration with overlayfs support
+.SH SYNOPSIS
+.B zram-config
+[\fIstart|stop|sync\fR]
+.SH DESCRIPTION
+.B zram-config
+manages zram devices for swap and directory backing. It uses
+overlayfs-tools to provide persistence for directories like /var/log.
+.SH FILES
+.TP
+.I /etc/ztab
+The configuration table defining zram devices and their mount points.
+.SH SEE ALSO
+.BR overlay (8)

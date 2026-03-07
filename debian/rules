@@ -1,0 +1,9 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+# This ensures all services and timers are enabled/started on install
+override_dh_installsystemd:
+	dh_installsystemd --name=zram-config zram-config.service
+	dh_installsystemd --name=zsync --no-stop-on-upgrade zram-config.zsync.timer zram-config.zsync.service

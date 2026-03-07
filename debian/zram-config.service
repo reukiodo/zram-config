@@ -1,0 +1,21 @@
+[Unit]
+Description=zram-config
+Documentation=https://github.com/reukiodo/zram-config/blob/main/README.md
+DefaultDependencies=no
+Before=basic.target rsyslog.service syslog-ng.service syslog.target systemd-journald.service sysinit.target shutdown.target
+Conflicts=shutdown.target reboot.target halt.target
+RequiresMountsFor=/var/log /opt/zram
+IgnoreOnIsolate=yes
+After=local-fs.target
+
+[Service]
+Type=oneshot
+TimeoutStopSec=240
+RemainAfterExit=yes
+WorkingDirectory=/usr/lib/zram-config
+ExecStart=/usr/sbin/zram-config "start"
+ExecReload=/usr/sbin/zram-config "sync"
+ExecStop=/usr/sbin/zram-config "stop"
+
+[Install]
+WantedBy=sysinit.target

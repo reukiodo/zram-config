@@ -1,0 +1,17 @@
+Source: zram-config
+Section: admin
+Priority: optional
+Maintainer: Miles Raymond <reukiodo@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com
+
+Package: zram-config
+Architecture: all
+Depends: ${misc:Depends}, 
+         overlayfs-tools (>= 20260306),
+         util-linux,
+         kmod
+Description: localized zram configuration with overlayfs support
+ Provides scripts to manage zram swap, log, and directory 
+ backing using overlayfs-tools for persistence.

@@ -1,0 +1,11 @@
+[Unit]
+Description=Perform nightly zram sync to persistent storage
+After=zram-config.service
+Wants=zram-config.zsync.timer
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/zram-config "sync" 
+
+# Example for sync only one single target
+# ExecStart=/usr/sbin/zram-config "sync" "/example/targetfolder"

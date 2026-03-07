@@ -1,0 +1,37 @@
+name: Debian Package Build
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Git Identity
+        id: ident
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          echo "NAME=$(git log -1 --pretty=format:'%an')" >> $GITHUB_ENV
+          echo "EMAIL=$(git log -1 --pretty=format:'%ae')" >> $GITHUB_ENV
+
+      - name: Print environment variables for debugging
+        run: env | sort
+
+      - name: Build and Test Package
+        uses: docker://debian/buildd:sid
+        env:
+          DEBFULLNAME: ${{ env.NAME }}
+          DEBEMAIL: ${{ env.EMAIL }}
+        with:
+          args: >
+            sh -c "apt-get update &&
+            apt-get install -y debhelper devscripts git lintian shellcheck &&
+            git config --global --add safe.directory /github/workspace &&
+            shellcheck zram-config &&
+            mk-build-deps -ir -t 'apt-get -y' &&
+            dpkg-buildpackage -us -uc -b &&
+            echo 'BUILD_COMPLETE' &&
+            lintian ../*.deb &&
+            dpkg -i ../*.deb"
