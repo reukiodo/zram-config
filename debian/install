@@ -1,2 +1,5 @@
 zram-config /usr/sbin/
 ztab /etc/
+debian/zram-config.service lib/systemd/system/
+debian/zram-config.zsync.service lib/systemd/system/
+debian/zram-config.zsync.timer lib/systemd/system/

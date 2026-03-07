@@ -2,8 +2,8 @@
 # providing the drive type and then drive details separated by tab characters.
 #
 # All algorithms in /proc/crypto are supported but only lzo-rle, lzo, lz4, and
-# zstd have zramctl text strings; lzo-rle is the fastest with zstd having much
-# better compression.
+# zstd have zramctl text strings; lzo is most compatible, lzo-rle is fastest,
+# and zstd having much better compression.
 #
 # mem_limit is the compressed memory limit and will set a hard memory limit for
 # the system admin. Set to 0 to disable the mem_limit.
@@ -32,19 +32,17 @@
 # If you need multiple zram swaps or zram directories, just create another entry
 # in this file. To do this simply add the new entries to this file, if you need
 # to edit an active zram device you must stop zram with
-# 'sudo systemctl stop zram-config.service' on Debian or
-# 'sudo rc-service zram-config stop' on Alpine and then edit any entries you
+# 'sudo systemctl stop zram-config.service' and then edit any entries you
 # need to. Once finished, start zram using
-# 'sudo systemctl start zram-config.service' or
-# 'sudo rc-service zram-config start' which will only add the new entries if
-# zram is already running.
+# 'sudo systemctl start zram-config.service' which will only add the new entries
+# if zram is already running.
 
-# swap	alg		mem_limit	disk_size	swap_priority	page-cluster	swappiness
+# swap	alg	mem_limit	disk_size	swap_priority	page-cluster	swappiness
 swap	lzo		0		1024M		32767		0		100
 
-# log	alg		mem_limit	disk_size	target_dir	oldlog_dir
-log	lzo		0		500M		/var/log	/opt/zram/oldlog
+# log	alg	mem_limit	disk_size	target_dir	oldlog_dir
+log lzo		0		500M		/var/log	/opt/zram/oldlog
 
-# dir	alg		mem_limit	disk_size	target_dir
+# dir	alg	mem_limit	disk_size	target_dir
 dir	lzo		0		500M		/tmp
 dir	lzo		0		500M		/var/cache

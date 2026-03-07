@@ -17,7 +17,8 @@ Used to initialize a zram-based swap device.
 .TP
 \fBalg\fR
 Compression algorithm (e.g., lzo-rle, lzo, lz4, zstd). \fIlzo-rle\fR is 
-fastest; \fIzstd\fR provides best compression.
+fastest; \fIzstd\fR provides best compression. If a zram device is active,
+cat /sys/block/zram0/comp_algorithm to list available algorithms.
 .TP
 \fBmem_limit\fR
 The compressed memory limit (e.g., 250M). Set to 0 to disable limit.
