@@ -1,0 +1,7 @@
+zram-config (20250306-1) unstable; urgency=medium
+
+  * Initial release to Debian.
+  * Added overlayfs-tools dependency for persistent directory backing.
+  * Localized paths to /usr/sbin and /etc for Debian compliance.
+
+ -- Miles Raymond <reukiodo@gmail.com>  Fri, 06 Mar 2026 17:30:00 -0800
