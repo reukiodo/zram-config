@@ -10,7 +10,7 @@ Package: zram-config
 Architecture: all
 Depends: ${misc:Depends}, 
          overlayfs-tools (>= 20260306),
-         util-linux,
+         util-linux (>= 2.39),
          kmod
 Description: localized zram configuration with overlayfs support
  Provides scripts to manage zram swap, log, and directory 
