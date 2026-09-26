@@ -1,0 +1,127 @@
+name: Debian Package Release Build
+
+on:
+  release:
+    types: [published] # Triggers automatically when you publish a GitHub Release
+
+jobs:
+  release-deb:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:sid # Native Sid environment ensures absolute tool matching
+    outputs:
+      artifact-version: ${{ steps.get-version.outputs.VERSION }}
+
+    steps:
+      - name: Install packaging dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            git \
+            build-essential \
+            debhelper-compat \
+            dh-sequence-systemd \
+            devscripts
+
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive # Ensures overlayfs-tools dependency checks pass cleanly
+
+      - name: Configure Git Identity
+        run: |
+          export DEBEMAIL="${{ github.actor }}@users.noreply.github.com"
+          export DEBFULLNAME="${{ github.actor }}"
+
+      - name: Auto-Generate Debian Changelog from Tag
+        run: |
+          # Strip the leading 'v' from the tag name (e.g., v2.1.0 -> 2.1.0)
+          VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          
+          # Inject identity fallback values
+          export DEBEMAIL="${{ github.actor }}@users.noreply.github.com"
+          export DEBFULLNAME="${{ github.actor }}"
+          
+          # Initialize or prepend a clean entry matching the official release version
+          dch --create --package zram-config --newversion "${VERSION}" \
+            "Automated production package release for tag ${{ github.ref_name }} via GitHub Actions." \
+            --distribution unstable --force-bad-version
+
+      - name: Build Binary Debian Package
+        run: |
+          # Use -b to build binary-only and avoid tracking down/generating missing upstream .orig.tar tarballs
+          dpkg-buildpackage -b -us -uc
+
+      - name: Stage Release Artifacts
+        run: |
+          mkdir -p staging_dir
+          mv ../zram-config_*.deb staging_dir/
+          mv ../zram-config_*.changes staging_dir/ || true
+          mv ../zram-config_*.buildinfo staging_dir/ || true
+
+      - name: Save Compiled Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zram-config
+          path: 'staging_dir/zram-config_*.deb'
+
+      - name: Upload Packages to Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: staging_dir/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test-package:
+    needs: release-deb
+    runs-on: ubuntu-latest # Runs directly on the host VM kernel with full systemd control
+    steps:
+      - name: Download Generated Package
+        uses: actions/download-artifact@v4
+        with:
+          name: zram-config
+          path: ./packages
+
+      - name: 1. Clean Installation Test
+        run: |
+          sudo apt-get update
+          # Install your custom deb file natively using apt
+          sudo apt-get install -y ./packages/zram-config_${{ needs.release-deb.outputs.artifact-version }}_*.deb
+
+      - name: 2. File & Runtime Validation (Systemd & Kernel)
+        run: |
+          echo "Verifying file layouts..."
+          test -f /usr/sbin/zram-config
+          test -f /etc/ztab
+
+          echo "Verifying service triggers..."
+          # On the real runner host, systemd is active (PID 1)
+          sudo systemctl is-enabled zram-config.service
+          sudo systemctl is-enabled zram-config.zsync.timer
+
+          echo "Checking active zram allocation profile..."
+          # Verifies if the kernel module successfully initialized devices
+          zramctl
+
+      - name: 3. Package Purge Teardown
+        run: |
+          echo "Purging package via apt..."
+          sudo apt-get purge -y zram-config
+          sudo apt-get autoremove -y
+
+      - name: 4. Post-Teardown Validations
+        run: |
+          echo "Ensuring all binaries and service descriptors are deleted..."
+          ! test -f /usr/sbin/zram-config
+          ! test -f /lib/systemd/system/zram-config.service
+          
+          # Verify that the purge operation dropped the state configuration completely
+          ! test -f /etc/ztab
+
+          echo "Verifying zram device cleanup..."
+          # Ensure devices were cleanly unmapped by prerm/postrm hooks
+          if [ -d /sys/class/zram-control ]; then
+              echo "Active zram devices remaining:"
+              zramctl || true
+          fi

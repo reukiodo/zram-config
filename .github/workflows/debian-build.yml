@@ -2,7 +2,26 @@ name: Debian Package Build
 on: [push, pull_request]
 
 jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run ShellCheck Analysis
+        uses: ludeeus/action-shellcheck@master
+        with:
+          # Scans zram-config script and your debian maintainer control scripts
+          scandir: '.'
+          additional_files: 'debian/prerm debian/postrm'
+        env:
+          # Optional: enforce strict POSIX checking or ignore specific warnings if needed
+          SHELLCHECK_OPTS: --severity=error -s sh
+
   build:
+    needs: shellcheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,9 +46,8 @@ jobs:
         with:
           args: >
             sh -c "apt-get update &&
-            apt-get install -y debhelper devscripts git lintian shellcheck &&
+            apt-get install -y debhelper devscripts git lintian &&
             git config --global --add safe.directory /github/workspace &&
-            shellcheck zram-config &&
             mk-build-deps -ir -t 'apt-get -y' &&
             dpkg-buildpackage -us -uc -b &&
             echo 'BUILD_COMPLETE' &&

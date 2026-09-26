@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+# Stop the services and cleanly teardown active zram swap/directories
+# before the binary scripts are deleted from /usr/sbin/
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
+    if systemctl is-active --quiet zram-config.service; then
+        echo "Stopping zram-config.service and tearing down zram devices..."
+        systemctl stop zram-config.service || true
+    fi
+    if systemctl is-active --quiet zram-config.zsync.timer; then
+        systemctl stop zram-config.zsync.timer || true
+    fi
+fi
+
+# DEBHELPER #
+exit 0

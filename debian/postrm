@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+# Clean up configuration and backup log files on complete purge
+if [ "$1" = "purge" ]; then
+    if [ -f /etc/ztab ]; then
+        rm -f /etc/ztab
+    fi
+    # Clean up residual log structures if they exist
+    rm -rf /var/log/zram-config/ 2>/dev/null || true
+fi
+
+# DEBHELPER #
+exit 0
