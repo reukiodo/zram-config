@@ -83,6 +83,16 @@ jobs:
           name: zram-config
           path: ./packages
 
+      - name: Fetch overlayfs-tools Dependency from GitHub Releases
+        run: |
+          # Use GitHub CLI to download the asset directly from your target release page
+          gh release download latest \
+            --repo reukiodo/overlayfs-tools \
+            --pattern "overlayfs-tools_*.deb" \
+            --dir ./packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 1. Clean Installation Test
         run: |
           sudo apt-get update

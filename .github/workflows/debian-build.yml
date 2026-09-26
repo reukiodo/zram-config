@@ -38,6 +38,16 @@ jobs:
       - name: Print environment variables for debugging
         run: env | sort
 
+      - name: Fetch overlayfs-tools Dependency from GitHub Releases
+        run: |
+          # Use GitHub CLI to download the asset directly from your target release page
+          gh release download v20260306-2 \
+            --repo reukiodo/overlayfs-tools \
+            --pattern "overlayfs-tools_*.deb" \
+            --dir ./packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build and Test Package
         uses: docker://debian/buildd:sid
         env:
@@ -46,7 +56,7 @@ jobs:
         with:
           args: >
             sh -c "apt-get update &&
-            apt-get install -y debhelper devscripts git lintian &&
+            apt-get install -y debhelper devscripts git lintian ./packages/*.deb &&
             git config --global --add safe.directory /github/workspace &&
             mk-build-deps -ir -t 'apt-get -y' &&
             dpkg-buildpackage -us -uc -b &&
