@@ -26,7 +26,7 @@ jobs:
           
           # Render the page to a null stream using warnings activation (-w w)
           # If groff detects unclosed markers or layout bugs, it exits with an error
-          groff -man -t -z -w w ztab.5
+          groff -man -t -z -w w debian/ztab.5
 
   build:
     needs: checks
