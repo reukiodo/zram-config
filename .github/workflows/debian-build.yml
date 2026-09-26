@@ -62,4 +62,4 @@ jobs:
             dpkg-buildpackage -us -uc -b &&
             echo 'BUILD_COMPLETE' &&
             lintian ../*.deb &&
-            dpkg -i ../*.deb"
+            apt-get install -y ../*.deb"
