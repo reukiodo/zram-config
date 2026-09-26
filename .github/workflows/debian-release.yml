@@ -45,8 +45,8 @@ jobs:
           export DEBEMAIL="${{ github.actor }}@users.noreply.github.com"
           export DEBFULLNAME="${{ github.actor }}"
           
-          # FIX: Prepend the new version to the existing log instead of attempting a file rewrite
-          dch -v "${VERSION}" --distribution unstable --force-distribution \
+          # Prepend a clean entry matching the official release version
+          dch -v "${VERSION}" --distribution unstable --force-distribution --force-bad-version \
             "Automated production package release for tag ${{ github.ref_name }} via GitHub Actions."
 
       - name: Build Binary Debian Package
