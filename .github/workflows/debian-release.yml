@@ -97,8 +97,8 @@ jobs:
       - name: 1. Clean Installation Test
         run: |
           sudo apt-get update
-          # Install your custom deb file natively using apt
-          sudo apt-get install -y ./packages/zram-config_${{ needs.release-deb.outputs.artifact-version }}_*.deb
+          # Install package and dependencies
+          sudo apt-get install -y ./packages/*.deb
 
       - name: 2. File & Runtime Validation (Systemd & Kernel)
         run: |
