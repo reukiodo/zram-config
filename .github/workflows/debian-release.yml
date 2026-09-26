@@ -35,18 +35,19 @@ jobs:
           export DEBFULLNAME="${{ github.actor }}"
 
       - name: Auto-Generate Debian Changelog from Tag
+        id: get-version
         run: |
           # Strip the leading 'v' from the tag name (e.g., v2.1.0 -> 2.1.0)
           VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           
           # Inject identity fallback values
           export DEBEMAIL="${{ github.actor }}@users.noreply.github.com"
           export DEBFULLNAME="${{ github.actor }}"
           
-          # Initialize or prepend a clean entry matching the official release version
-          dch --create --package zram-config --newversion "${VERSION}" \
-            "Automated production package release for tag ${{ github.ref_name }} via GitHub Actions." \
-            --distribution unstable --force-bad-version
+          # FIX: Prepend the new version to the existing log instead of attempting a file rewrite
+          dch -v "${VERSION}" --distribution unstable --force-distribution \
+            "Automated production package release for tag ${{ github.ref_name }} via GitHub Actions."
 
       - name: Build Binary Debian Package
         run: |
