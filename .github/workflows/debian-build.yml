@@ -41,7 +41,7 @@ jobs:
       - name: Fetch overlayfs-tools Dependency from GitHub Releases
         run: |
           # Use GitHub CLI to download the asset directly from your target release page
-          gh release download v20260306-2 \
+          gh release download \
             --repo reukiodo/overlayfs-tools \
             --pattern "overlayfs-tools_*.deb" \
             --dir ./packages
