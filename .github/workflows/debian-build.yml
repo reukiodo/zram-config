@@ -2,7 +2,7 @@ name: Debian Package Build
 on: [push, pull_request]
 
 jobs:
-  shellcheck:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code
@@ -20,8 +20,16 @@ jobs:
           # Optional: enforce strict POSIX checking or ignore specific warnings if needed
           SHELLCHECK_OPTS: --severity=error -s sh
 
+      - name: Validate Man Page Syntax (groff)
+        run: |
+          sudo apt-get update && sudo apt-get install -y groff
+          
+          # Render the page to a null stream using warnings activation (-w w)
+          # If groff detects unclosed markers or layout bugs, it exits with an error
+          groff -man -t -z -w w ztab.5
+
   build:
-    needs: shellcheck
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -20,7 +20,17 @@ Experimental Alpine support has also been added, other distributions may work bu
 
 ## A Brief Usage Guide
 
-### Install
+## Installation
+
+Until these packages are incorporated directly into the official upstream Debian repositories, you can install them manually using the precompiled release assets.
+
+Using an automated setup script to install both `zram-config` and `overlayfs-tools` natively with full dependency resolution:
+
+```bash
+curl -s https://raw.githubusercontent.com/reukiodo/zram-config/refs/heads/debian/sid/dl-install.bash | sudo bash
+```
+
+### Alternate Install compiling from source
 
 The following assumes that you have the [`gh`](https://cli.github.com) cli tool installed and setup on your system.
 

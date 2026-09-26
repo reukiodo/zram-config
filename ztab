@@ -4,6 +4,8 @@
 # All algorithms in /proc/crypto are supported but only lzo-rle, lzo, lz4, and
 # zstd have zramctl text strings; lzo is most compatible, lzo-rle is fastest,
 # and zstd having much better compression.
+# 
+# 'cat /sys/block/zram0/comp_algorithm' will show a complete list.
 #
 # mem_limit is the compressed memory limit and will set a hard memory limit for
 # the system admin. Set to 0 to disable the mem_limit.

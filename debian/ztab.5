@@ -60,6 +60,19 @@ Used to hold a general directory in zram via OverlayFS.
 To edit an active zram device, the \fBzram-config.service\fR must be 
 stopped before changes to \fBztab\fR are applied.
 
+.SH TIPS
+To discover which compression modules are natively built into or loaded by your active Linux kernel, you can check the cryptographic subsystem:
+.EX
+awk '$1=="name" && $2 ~ /^(zstd|lzo|lz4|gzip|deflate)/ {print $2}' /proc/crypto | sort -u | paste -sd, -
+.EE
+.PP
+Once the
+.B zram-config
+service has initialized your swap or logging block partitions, you can query the zram subsystem directly to see all supported engines alongside the currently active selection (denoted in brackets):
+.EX
+cat /sys/block/zram0/comp_algorithm
+.EE
+
 .SH FILES
 .I /etc/ztab
 .SH SEE ALSO
