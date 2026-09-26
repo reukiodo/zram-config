@@ -1,6 +1,6 @@
 zram-config usr/sbin/
 ztab etc/
-ztab.5 usr/share/man/man5/
+debian/ztab.5 usr/share/man/man5/
 debian/zram-config.service usr/lib/systemd/system/
 debian/zram-config.zsync.service usr/lib/systemd/system/
 debian/zram-config.zsync.timer usr/lib/systemd/system/
