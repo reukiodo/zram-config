@@ -51,7 +51,7 @@ jobs:
           # Use GitHub CLI to download the asset directly from your target release page
           gh release download \
             --repo reukiodo/overlayfs-tools \
-            --pattern "overlayfs-tools_*.deb" \
+            --pattern "overlayfs-tools_*amd64.deb" \
             --dir ./packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
