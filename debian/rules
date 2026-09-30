@@ -7,3 +7,8 @@
 override_dh_installsystemd:
 	dh_installsystemd --no-stop-on-upgrade zram-config.service
 	dh_installsystemd --no-stop-on-upgrade zram-config.zsync.timer zram-config.zsync.service
+
+# Override dh_auto_install to inject missing directory structures
+override_dh_auto_install:
+	dh_auto_install
+	mkdir -p debian/zram-config/usr/share/zram-config/log
