@@ -12,7 +12,6 @@ After=local-fs.target
 Type=oneshot
 TimeoutStopSec=240
 RemainAfterExit=yes
-WorkingDirectory=/usr/lib/zram-config
 ExecStart=/usr/sbin/zram-config "start"
 ExecReload=/usr/sbin/zram-config "sync"
 ExecStop=/usr/sbin/zram-config "stop"
