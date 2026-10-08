@@ -5,10 +5,10 @@ timestamp() { printf "%(%FT%T%z)T\\n" "-1"; }
 log() {
     local log_level="$1"
     local log_message="$2"
-    if [[ $2 != "ERR" ]]; then
-        echo "$(timestamp) | $log_level | ${FUNCNAME[1]}: $log_message" >> "$ZLOG"
+    if [[ $log_level != "ERR" ]]; then
+        echo "$(timestamp) | $log_level | ${FUNCNAME[1]}: $log_message"
     else
-        echo "$(timestamp) | $log_level | ${FUNCNAME[1]}: $log_message Exiting!" | tee -a "$ZLOG"
+        echo "$(timestamp) | $log_level | ${FUNCNAME[1]}: $log_message Exiting!" >&2
     fi
 }
 
@@ -95,7 +95,7 @@ createZswap() {
         log "INF" "No swappiness provided for /dev/zram${RAM_DEV}."
     fi
 
-    echo "swap      zram${RAM_DEV}" >> "$TMPDIR"/zram-device-list
+    echo "swap      zram${RAM_DEV}" >> "$ZDIR"/zram-device-list
     log "INF" "Completed swap device creation."
 }
 
@@ -107,7 +107,7 @@ createZdir() {
     local dirFSType
     local retVal=0
 
-    log "INF" "Beginning creation of ${ZDIR}/zram${RAM_DEV}." >> "$ZLOG"
+    log "INF" "Beginning creation of ${ZBIND}/zram${RAM_DEV}."
     if [[ -z $BIND_DIR ]]; then
         log "ERR" "No bind directory provided in '/etc/ztab'."
         return 1
@@ -116,24 +116,24 @@ createZdir() {
         return 1
     fi
 
-    mkdir -p "${ZDIR}/${BIND_DIR}"
+    mkdir -p "${ZBIND}/${BIND_DIR}"
 
     dirPerm="$(stat -c "%a" "$TARGET_DIR")"
     dirUser="$(stat -c "%u" "$TARGET_DIR")"
     dirGroup="$(stat -c "%g" "$TARGET_DIR")"
     log "DBG" "File permissions for $TARGET_DIR - $dirPerm ${dirUser}:${dirGroup}"
 
-    if ! mount --bind "${TARGET_DIR}/" "${ZDIR}/${BIND_DIR}/" &> /dev/null; then
-        log "ERR" "Failed to bind mount ${TARGET_DIR} to ${ZDIR}/${BIND_DIR}."
+    if ! mount --bind "${TARGET_DIR}/" "${ZBIND}/${BIND_DIR}/" &> /dev/null; then
+        log "ERR" "Failed to bind mount ${TARGET_DIR} to ${ZBIND}/${BIND_DIR}."
         return 1
     fi
-    if ! mount --make-private "${ZDIR}/${BIND_DIR}/" &> /dev/null; then
-        log "ERR" "Failed to make ${ZDIR}/${BIND_DIR} private."
+    if ! mount --make-private "${ZBIND}/${BIND_DIR}/" &> /dev/null; then
+        log "ERR" "Failed to make ${ZBIND}/${BIND_DIR} private."
         return 1
     fi
 
-    dirMountOpt="$(awk -v a="${ZDIR}/${BIND_DIR}" '$2 == a {print $4}' /proc/mounts | head -1)"
-    dirFSType="$(awk -v a="${ZDIR}/${BIND_DIR}" '$2 == a {print $3}' /proc/mounts | head -1)"
+    dirMountOpt="$(awk -v a="${ZBIND}/${BIND_DIR}" '$2 == a {print $4}' /proc/mounts | head -1)"
+    dirFSType="$(awk -v a="${ZBIND}/${BIND_DIR}" '$2 == a {print $3}' /proc/mounts | head -1)"
     log "DBG" "Directory settings - ${dirMountOpt} ${dirFSType}."
 
     createZdevice || return 1
@@ -143,34 +143,34 @@ createZdir() {
         log "ERR" "Failed to create filesystem on /dev/zram${RAM_DEV}."
         return 1
     fi
-    mkdir -p "${ZDIR}/zram${RAM_DEV}"
-    mount --types "$dirFSType" -o "$dirMountOpt" "/dev/zram${RAM_DEV}" "${ZDIR}/zram${RAM_DEV}/" &> /dev/null || retVal=1
-    mkdir -p "${ZDIR}/zram${RAM_DEV}/upper" "${ZDIR}/zram${RAM_DEV}/workdir" "$TARGET_DIR"
-    mount --types overlay -o "redirect_dir=on,metacopy=on,lowerdir=${ZDIR}/${BIND_DIR},upperdir=${ZDIR}/zram${RAM_DEV}/upper,workdir=${ZDIR}/zram${RAM_DEV}/workdir" "overlay${RAM_DEV}" "$TARGET_DIR" &> /dev/null || retVal=1
-    chown "${dirUser}:${dirGroup}" "${ZDIR}/zram${RAM_DEV}/upper" "${ZDIR}/zram${RAM_DEV}/workdir" "$TARGET_DIR" &> /dev/null || retVal=1
-    chmod "$dirPerm" "${ZDIR}/zram${RAM_DEV}/upper" "${ZDIR}/zram${RAM_DEV}/workdir" "$TARGET_DIR" &> /dev/null || retVal=1
+    mkdir -p "${ZBIND}/zram${RAM_DEV}"
+    mount --types "$dirFSType" -o "$dirMountOpt" "/dev/zram${RAM_DEV}" "${ZBIND}/zram${RAM_DEV}/" &> /dev/null || retVal=1
+    mkdir -p "${ZBIND}/zram${RAM_DEV}/upper" "${ZBIND}/zram${RAM_DEV}/workdir" "$TARGET_DIR"
+    mount --types overlay -o "redirect_dir=on,metacopy=on,lowerdir=${ZBIND}/${BIND_DIR},upperdir=${ZBIND}/zram${RAM_DEV}/upper,workdir=${ZBIND}/zram${RAM_DEV}/workdir" "overlay${RAM_DEV}" "$TARGET_DIR" &> /dev/null || retVal=1
+    chown "${dirUser}:${dirGroup}" "${ZBIND}/zram${RAM_DEV}/upper" "${ZBIND}/zram${RAM_DEV}/workdir" "$TARGET_DIR" &> /dev/null || retVal=1
+    chmod "$dirPerm" "${ZBIND}/zram${RAM_DEV}/upper" "${ZBIND}/zram${RAM_DEV}/workdir" "$TARGET_DIR" &> /dev/null || retVal=1
     if [[ $retVal -ne 0 ]]; then
-        log "ERR" "Failed to setup and mount ${ZDIR}/zram${RAM_DEV}."
+        log "ERR" "Failed to setup and mount ${ZBIND}/zram${RAM_DEV}."
         return 1
     fi
 
-    echo "${ZTYPE}      zram${RAM_DEV}      ${TARGET_DIR}" >> "$TMPDIR"/zram-device-list
+    echo "${ZTYPE}      zram${RAM_DEV}      ${TARGET_DIR}" >> "$ZDIR"/zram-device-list
 
     if [[ $ZTYPE == "log" ]] && [[ -n $OLDLOG_DIR ]]; then
         echo -e "olddir ${OLDLOG_DIR}\\ncreateolddir 755 root root\\nrenamecopy" > /etc/logrotate.d/00_oldlog
     elif [[ $ZTYPE == "log" ]]; then
         log "INF" "No oldlog directory provided, skipping oldlog configuration."
     fi
-    log "INF" "Creation of ${ZDIR}/zram${RAM_DEV} complete."
+    log "INF" "Creation of ${ZBIND}/zram${RAM_DEV} complete."
 }
 
 mergeOverlay() {
-    log "INF" "Beginning merge of ${ZDIR}/${BIND_DIR}."
-    if ! overlay merge --force-execution --ignore-mounted --lowerdir="${ZDIR}/${BIND_DIR}" --upperdir="${ZDIR}/${ZRAM_DEV}/upper" &> /dev/null; then
-        log "ERR" "Failed to merge ${ZDIR}/${BIND_DIR}."
+    log "INF" "Beginning merge of ${ZBIND}/${BIND_DIR}."
+    if ! overlay merge --force-execution --ignore-mounted --lowerdir="${ZBIND}/${BIND_DIR}" --upperdir="${ZBIND}/${ZRAM_DEV}/upper" &> /dev/null; then
+        log "ERR" "Failed to merge ${ZBIND}/${BIND_DIR}."
         return 1
     fi
-    log "INF" "Merge of ${ZDIR}/${BIND_DIR} complete."
+    log "INF" "Merge of ${ZBIND}/${BIND_DIR} complete."
 }
 
 removeZdevice() {
@@ -236,11 +236,11 @@ removeZdir() {
 
     mergeOverlay || return 1
 
-    umountTarget "${ZDIR}/${ZRAM_DEV}" || return 1
-    rm -rf "${ZDIR:?}/${ZRAM_DEV}"
+    umountTarget "${ZBIND}/${ZRAM_DEV}" || return 1
+    rm -rf "${ZBIND:?}/${ZRAM_DEV}"
 
-    umountTarget "${ZDIR}/${BIND_DIR}" || return 1
-    rm -rf "${ZDIR:?}/${BIND_DIR}"
+    umountTarget "${ZBIND}/${BIND_DIR}" || return 1
+    rm -rf "${ZBIND:?}/${BIND_DIR}"
 
     log "INF" "Completed merge of device /dev/${ZRAM_DEV}."
 
@@ -255,7 +255,7 @@ removeZswap() {
         return 1
     fi
 
-    log "INF" "Completed swap device removal." >> "$ZLOG"
+    log "INF" "Completed swap device removal."
 
     removeZdevice || return 1
 }
@@ -267,9 +267,9 @@ syncZdir() {
 
     mergeOverlay || return 1
 
-    mkdir -p "${ZDIR}/${ZRAM_DEV}/upper" "${ZDIR}/${ZRAM_DEV}/workdir" "$TARGET_DIR"
-    if ! mount --types overlay -o "redirect_dir=on,lowerdir=${ZDIR}/${BIND_DIR},upperdir=${ZDIR}/${ZRAM_DEV}/upper,workdir=${ZDIR}/${ZRAM_DEV}/workdir" "overlay${ZRAM_DEV//[!0-9]/}" "$TARGET_DIR" &> /dev/null; then
-        log "ERR" "Failed to remount overlay for ${ZDIR}/${BIND_DIR}."
+    mkdir -p "${ZBIND}/${ZRAM_DEV}/upper" "${ZBIND}/${ZRAM_DEV}/workdir" "$TARGET_DIR"
+    if ! mount --types overlay -o "redirect_dir=on,lowerdir=${ZBIND}/${BIND_DIR},upperdir=${ZBIND}/${ZRAM_DEV}/upper,workdir=${ZBIND}/${ZRAM_DEV}/workdir" "overlay${ZRAM_DEV//[!0-9]/}" "$TARGET_DIR" &> /dev/null; then
+        log "ERR" "Failed to remount overlay for ${ZBIND}/${BIND_DIR}."
         return 1
     fi
 
@@ -330,9 +330,10 @@ serviceConfiguration() {
     fi
 }
 
-TMPDIR="/usr/lib/zram-config"
-ZDIR="/opt/zram"
-ZLOG="/usr/share/zram-config/log/zram-config.log"
+ZDIR="/etc/zram-config/"
+ZBIND="/opt/zram"
+[[ -d "$ZDIR" ]] || mkdir -pm 755 "$ZDIR"
+[[ -d "$ZBIND" ]] || mkdir -pm 700 "$ZBIND"
 OS="$(grep -o '^ID=.*$' /etc/os-release | cut -d'=' -f2)"
 if systemctl list-jobs | grep -q 'shutdown.target.*start' || systemctl list-jobs | grep -q 'reboot.target.*start'; then
     SHUTDOWN="1"
@@ -366,11 +367,11 @@ case "$1" in
                     ALG="$2"
                     MEM_SIZE="$3"
                     DISK_SIZE="$4"
-                    if [[ -s "$TMPDIR"/zram-device-list ]]; then
+                    if [[ -s "$ZDIR"/zram-device-list ]]; then
                         if [[ $1 == "swap" ]]; then
-                            entry="$(grep "^swap" "$TMPDIR"/zram-device-list)"
+                            entry="$(grep "^swap" "$ZDIR"/zram-device-list)"
                         else
-                            entry="$(grep "${1}.*${5}" "$TMPDIR"/zram-device-list)"
+                            entry="$(grep "${1}.*${5}" "$ZDIR"/zram-device-list)"
                         fi
                         if [[ -n $entry ]]; then
                             log "WRN" "Entry ${entry} already exists as a zram device, skipping recreation of device."
@@ -405,11 +406,11 @@ case "$1" in
 
     stop)
         log "INF" "Stopping services."
-        if ! [[ -s "$TMPDIR"/zram-device-list ]]; then
+        if ! [[ -s "$ZDIR"/zram-device-list ]]; then
             log "WRN" "Skipping stop, zram-config not running."
             exit 0
         fi
-        tac "$TMPDIR"/zram-device-list > "$TMPDIR"/zram-device-list.rev
+        tac "$ZDIR"/zram-device-list > "$ZDIR"/zram-device-list.rev
         while read -r line; do
             case "$line" in
                 "#"*)
@@ -441,20 +442,20 @@ case "$1" in
                     esac
                     ;;
             esac
-        done < "$TMPDIR"/zram-device-list.rev
-        rm -f "$TMPDIR"/zram-device-list.rev "$TMPDIR"/zram-device-list
+        done < "$ZDIR"/zram-device-list.rev
+        rm -f "$ZDIR"/zram-device-list.rev "$ZDIR"/zram-device-list
         ;;
 
     sync)
         log "INF" "Syncing files."
-        if ! [[ -s "$TMPDIR"/zram-device-list ]]; then
+        if ! [[ -s "$ZDIR"/zram-device-list ]]; then
             log "WRN" "Skipping sync, zram-config not running."
             exit 0
         fi
         if [[ $# -gt 1 ]]; then
             ONLY_TARGET="$2"
         fi
-        tac "$TMPDIR"/zram-device-list > "$TMPDIR"/zram-device-list.rev
+        tac "$ZDIR"/zram-device-list > "$ZDIR"/zram-device-list.rev
         while read -r line; do
             case "$line" in
                 "#"*)
@@ -483,8 +484,8 @@ case "$1" in
                     esac
                     ;;
             esac
-        done < "$TMPDIR"/zram-device-list.rev
-        rm -f "$TMPDIR"/zram-device-list.rev
+        done < "$ZDIR"/zram-device-list.rev
+        rm -f "$ZDIR"/zram-device-list.rev
         ;;
 
     *)

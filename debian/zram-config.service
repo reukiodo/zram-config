@@ -12,10 +12,11 @@ After=local-fs.target
 Type=oneshot
 TimeoutStopSec=240
 RemainAfterExit=yes
-WorkingDirectory=/usr/local/lib/zram-config
+WorkingDirectory=/etc/zram-config/
 ExecStart=/usr/sbin/zram-config "start"
 ExecReload=/usr/sbin/zram-config "sync"
 ExecStop=/usr/sbin/zram-config "stop"
+StandardOutput=journal+console
 
 [Install]
 WantedBy=sysinit.target
