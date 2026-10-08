@@ -11,4 +11,5 @@ override_dh_installsystemd:
 # Override dh_auto_install to inject missing directory structures
 override_dh_auto_install:
 	dh_auto_install
+	mkdir -p debian/zram-config/usr/lib/zram-config
 	mkdir -p debian/zram-config/usr/share/zram-config/log
